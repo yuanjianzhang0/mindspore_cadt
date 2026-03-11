@@ -1,0 +1,24 @@
+# Edge Deployment Configuration for Ascend 310B NPU
+
+system:
+  device_target: "Ascend"
+  device_id: 0
+  precision_mode: "fp16"           # Utilizing FP16 for optimal NPU throughput
+
+model:
+  mindir_path: "deployment/cadt_edge_model.mindir"
+  batch_size: 1                    # Real-time streaming constraint
+  sequence_length: 16
+  threshold_distress: 0.85         # Confidence threshold to trigger LLM reasoning
+
+sensors:
+  api_base_url: "http://127.0.0.1:8080/api/v1"
+  visual_freq: 30
+  sonar_freq: 10
+  physio_freq: 120
+  alignment_window_sec: 1.6
+
+qwen_engine:
+  enable: true
+  quantization: "int8"             # Memory-efficient LLM configuration for edge
+  endpoint: "local"                # "local" for Ascend inference, "cloud" for API routing

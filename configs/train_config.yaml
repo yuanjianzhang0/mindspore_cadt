@@ -1,0 +1,35 @@
+# ==========================================
+# CADT Architecture Training Configuration
+# ==========================================
+
+experiment_name: "cadt_baseline_multimodal"
+seed: 42
+
+hardware:
+  device_target: "Ascend"      # Target execution backend (Ascend, GPU, or CPU)
+  device_id: 0
+  dataset_sink_mode: true      # Accelerates training by pushing data directly to NPU memory
+
+data:
+  train_csv_path: "dataset/train_dataset.csv"
+  eval_csv_path: "dataset/eval_dataset.csv"
+  batch_size: 64
+  sequence_length: 16
+  num_workers: 8               # CPU threads for data preprocessing
+
+model:
+  d_model: 256
+  n_heads: 8
+  num_layers: 3
+  num_classes: 2
+
+optimizer:
+  type: "AdamWeightDecay"
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  epochs: 100
+
+logging:
+  save_checkpoint_steps: 1000
+  keep_checkpoint_max: 5
+  output_dir: "results/checkpoints"
