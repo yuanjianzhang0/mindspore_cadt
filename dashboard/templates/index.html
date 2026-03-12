@@ -3,177 +3,486 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CADT 跨模态溺水救援指挥系统</title>
+    <title>CADT 跨模态溺水救援指挥系统 | v1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <style>
-        body { 
-            background-color: #121212; 
-            color: #ffffff; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            margin: 0; 
-            overflow: hidden; 
-        }
-        
-        /* 工业级面板 */
-        .panel { 
-            background: #1e1e1e; 
-            border: 1px solid #333; 
-            border-radius: 4px; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        /* 标题栏设计 */
-        .panel-header {
-            background: #252525;
-            padding: 8px 12px;
-            border-bottom: 1px solid #333;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #999;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        /* 状态灯 */
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-        .bg-safe { background-color: #4caf50; box-shadow: 0 0 8px #4caf50; }
-        .bg-danger { background-color: #f44336; box-shadow: 0 0 8px #f44336; }
-
-        /* 滚动条 */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: #1a1a1a; }
-        ::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
-        ::-webkit-scrollbar-thumb:hover { background: #666; }
-
-        .terminal-text { font-family: "Consolas", "Monaco", monospace; line-height: 1.4; }
+        body { background-color: #f3f4f6; color: #1f2937; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; overflow: hidden; }
+        .panel { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+        .panel-header { background: #f9fafb; padding: 12px 16px; border-bottom: 1px solid #e5e7eb; font-size: 0.875rem; font-weight: 600; color: #4b5563; display: flex; justify-content: space-between; align-items: center; border-top-left-radius: 6px; border-top-right-radius: 6px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f3f4f6; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        .terminal-text { font-family: "Consolas", "Monaco", monospace; line-height: 1.5; }
+        .nav-item.active { background-color: #eff6ff; color: #2563eb; border-right: 3px solid #2563eb; }
+        .hidden-view { display: none !important; }
+        .recording-dot { animation: blink 1.5s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
     </style>
 </head>
-<body class="h-screen flex flex-col p-3 overflow-hidden">
+<body class="h-screen flex overflow-hidden">
 
-    <header class="flex justify-between items-center mb-3 bg-[#1e1e1e] border border-[#333] p-4 rounded flex-shrink-0">
-        <div class="flex items-center gap-4">
-            <div class="bg-[#005fb8] p-2 rounded">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-            </div>
-            <div>
-                <h1 class="text-xl font-bold tracking-tight">CADT 跨模态溺水救援指挥中心</h1>
-                <p class="text-xs text-gray-500 uppercase">工业级边缘节点监控 · 昇腾 310B NPU 加速</p>
-            </div>
-        </div>
-        
-        <div class="flex gap-6 items-center">
-            <div class="text-right border-r border-gray-700 pr-6">
-                <div class="text-[10px] text-gray-500 mb-1">数据源状态</div>
-                <div id="data-mode" class="text-sm font-bold text-blue-400">正在建立连接...</div>
-            </div>
-            <div class="text-right">
-                <div class="text-[10px] text-gray-500 mb-1">系统全局判定</div>
-                <div id="status-indicator" class="text-xl font-bold text-green-500">正在监测中</div>
-            </div>
-        </div>
-    </header>
-
-    <div class="grid grid-cols-12 gap-3 flex-1 min-h-0">
-        
-        <div class="col-span-8 flex flex-col gap-3 h-full min-h-0">
-            <div class="flex gap-3 h-3/5 min-h-0">
-                <div class="panel flex-1 flex flex-col min-h-0">
-                    <div class="panel-header">
-                        <span>光学视觉传感器 [USV-CAM-1]</span>
-                        <span class="text-[10px] text-blue-500">LIVE / 1080P</span>
-                    </div>
-                    <div class="flex-1 bg-black flex items-center justify-center relative overflow-hidden">
-                        <div class="w-full h-full opacity-10" style="background-image: radial-gradient(#333 1px, transparent 1px); background-size: 15px 15px;"></div>
-                        <div class="absolute text-gray-700 font-bold">无视频流信号接入</div>
-                    </div>
+    <div id="add-device-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50 transition-opacity">
+        <div class="relative top-24 mx-auto p-6 border w-96 shadow-xl rounded-lg bg-white">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">接入新设备</h3>
+            <form id="add-device-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">资产编号 / 名称</label>
+                    <input type="text" id="dev-name" placeholder="例如: USV-ALPHA-01" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                 </div>
-                <div class="panel flex-1 flex flex-col min-h-0">
-                    <div class="panel-header">
-                        <span>声呐探测矩阵 [UUV-SONAR]</span>
-                        <span class="text-[10px] text-purple-500">ACOUSTIC</span>
-                    </div>
-                    <div class="flex-1 min-h-0" id="sonar-chart"></div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">设备类型</label>
+                    <select id="dev-type" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <option value="无人水面救援艇 (USV)">无人水面救援艇 (USV)</option>
+                        <option value="自主水下潜航器 (UUV)">自主水下潜航器 (UUV)</option>
+                        <option value="岸基光学传感器">岸基光学传感器</option>
+                        <option value="水下声呐测绘阵列">水下声呐测绘阵列</option>
+                        <option value="医疗级生理贴片">医疗级生理贴片</option>
+                    </select>
                 </div>
-            </div>
-            
-            <div class="panel flex-1 flex flex-col min-h-0">
-                <div class="panel-header">
-                    <span>人体生理特征监测 (心率变异性 / 血氧饱和度)</span>
-                    <span class="text-[10px] text-red-500">MEDICAL GRADE</span>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">IP 地址 / 链路协议</label>
+                    <input type="text" id="dev-ip" placeholder="例如: 192.168.1.10" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                 </div>
-                <div class="flex-1 w-full min-h-0" id="physio-chart"></div>
-            </div>
-        </div>
-
-        <div class="col-span-4 flex flex-col gap-3 h-full min-h-0">
-            
-            <div class="panel flex-1 flex flex-col min-h-0">
-                <div class="panel-header">险情发生概率判决 (CADT)</div>
-                <div class="flex-1 min-h-0" id="gauge-chart"></div>
-                <div class="p-2 text-center border-t border-[#333] text-[10px] text-gray-500">
-                    NPU 处理耗时: <span id="npu-latency" class="text-white">0.0</span> ms
+                <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+                    <button type="button" onclick="closeDeviceModal()" class="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 text-sm font-medium">取消</button>
+                    <button type="button" onclick="submitNewDevice()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium shadow-sm">确认挂载</button>
                 </div>
-            </div>
-
-            <div class="panel flex-1 flex flex-col border-l-2 border-purple-600 min-h-0">
-                <div class="panel-header">Qwen 认知引擎决策输出</div>
-                <div id="llm-log" class="flex-1 bg-[#0f0f0f] p-3 text-[11px] terminal-text text-gray-300 overflow-y-auto min-h-0">
-                    <div class="text-gray-600">等待高危异常触发...</div>
-                </div>
-            </div>
-
-            <div class="panel flex-1 flex flex-col border-l-2 border-blue-600 min-h-0">
-                <div class="panel-header">多智能体蜂群调度指令</div>
-                <div id="swarm-log" class="flex-1 bg-[#0f0f0f] p-3 text-[11px] terminal-text text-blue-400 overflow-y-auto min-h-0">
-                    <div class="text-gray-600">集群资产待命...</div>
-                </div>
-            </div>
+            </form>
         </div>
     </div>
 
+    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col z-20 shadow-sm flex-shrink-0">
+        <div class="h-16 flex items-center px-6 border-b border-gray-200">
+            <svg class="w-8 h-8 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+            </svg>
+            <div>
+                <h1 class="text-base font-bold text-gray-900 tracking-tight">TECH-RESCUE</h1>
+                <p class="text-[10px] text-gray-500">CADT 智能指挥中心</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-4">
+            <ul class="space-y-1">
+                <li>
+                    <a href="#" onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item active flex items-center px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                        实时监控大盘
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="switchTab('devices')" id="nav-devices" class="nav-item flex items-center px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                        集群设备管理
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="switchTab('logs')" id="nav-logs" class="nav-item flex items-center px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        预警日志分析
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="switchTab('settings')" id="nav-settings" class="nav-item flex items-center px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        系统安全与配置
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="p-4 border-t border-gray-200">
+            <div class="flex items-center text-xs text-gray-500 mb-2">
+                <span class="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                System Core: Online
+            </div>
+            <p class="text-[10px] text-gray-400">Version 4.2.0 (Ascend NPU)</p>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50 relative">
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0">
+            <div class="flex items-center text-sm text-gray-500">
+                <span>CADT 平台</span>
+                <svg class="w-4 h-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                <span id="breadcrumb-current" class="text-gray-900 font-medium">实时监控大盘</span>
+            </div>
+            <div class="flex gap-6 items-center">
+                <div class="text-right border-r border-gray-200 pr-6 hidden md:block">
+                    <div class="text-[10px] text-gray-500 mb-0.5">数据源连接状态</div>
+                    <div id="data-mode" class="text-xs font-bold text-blue-600 flex items-center justify-end">
+                        <span class="w-2 h-2 rounded-full bg-blue-500 mr-1.5 animate-pulse"></span>正在同步...
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-[10px] text-gray-500 mb-0.5">系统预警级别</div>
+                    <div id="status-indicator" class="text-base font-bold text-green-600 bg-green-50 px-3 py-0.5 rounded border border-green-200">
+                        安全监控中
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div id="view-dashboard" class="flex-1 p-4 grid grid-cols-12 gap-4 min-h-0 overflow-hidden">
+            <div class="col-span-12 xl:col-span-8 flex flex-col gap-4 h-full min-h-0">
+                <div class="flex gap-4 h-3/5 min-h-0">
+                    <div class="panel flex-1 flex flex-col min-h-0 relative">
+                        <div class="panel-header z-20 bg-white/90 backdrop-blur-sm border-b border-gray-200">
+                            <div class="flex items-center"><svg class="w-4 h-4 mr-1.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg> 光学视觉传感器 (USV-CAM-1)</div>
+                            <span id="video-status-badge" class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded text-[10px] flex items-center">STANDBY</span>
+                        </div>
+                        <div class="flex-1 bg-black flex items-center justify-center relative overflow-hidden">
+                            <div id="video-placeholder" class="absolute inset-0 flex flex-col items-center justify-center z-10 bg-gray-100">
+                                <svg class="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"></path></svg>
+                                <div id="video-error-msg" class="absolute text-sm text-gray-400 font-medium">等待视频流信号接入</div>
+                            </div>
+                            <img id="video-feed" class="absolute inset-0 w-full h-full object-cover z-10 hidden" alt="USV Live Feed" onerror="handleVideoError()">
+                        </div>
+                    </div>
+
+                    <div class="panel flex-1 flex flex-col min-h-0">
+                        <div class="panel-header">
+                            <div class="flex items-center"><svg class="w-4 h-4 mr-1.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> 水下声呐测绘矩阵</div>
+                            <span class="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">ACOUSTIC 10Hz</span>
+                        </div>
+                        <div class="flex-1 min-h-0 bg-white rounded-b-md" id="sonar-chart"></div>
+                    </div>
+                </div>
+                
+                <div class="panel flex-1 flex flex-col min-h-0">
+                    <div class="panel-header">
+                        <div class="flex items-center"><svg class="w-4 h-4 mr-1.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg> 目标生理特征监测 (HRV / SpO2)</div>
+                        <span class="text-[10px] text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100 animate-pulse">LIVE DATA</span>
+                    </div>
+                    <div class="flex-1 w-full min-h-0 bg-white rounded-b-md" id="physio-chart"></div>
+                </div>
+            </div>
+
+            <div class="col-span-12 xl:col-span-4 flex flex-col gap-4 h-full min-h-0">
+                <div class="panel flex-[1.2] flex flex-col min-h-0 border-t-4 border-t-blue-500">
+                    <div class="panel-header border-b-0 bg-white">险情发生概率判决 (CADT Model)</div>
+                    <div class="flex-1 min-h-0 bg-white" id="gauge-chart"></div>
+                    <div class="p-2.5 flex justify-between bg-gray-50 border-t border-gray-200 text-xs text-gray-500 font-mono rounded-b-md">
+                        <span>NPU_LATENCY: <b id="npu-latency" class="text-blue-600">0.0</b> ms</span>
+                        <span>PRECISION: <b class="text-gray-700">FP16</b></span>
+                    </div>
+                </div>
+
+                <div class="panel flex-1 flex flex-col min-h-0 shadow-sm">
+                    <div class="panel-header bg-purple-50 border-b border-purple-100">
+                        <span class="text-purple-800 font-bold flex items-center"><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>Qwen 认知引擎决策输出</span>
+                    </div>
+                    <div id="llm-log" class="flex-1 bg-gray-50 p-3 text-[11px] terminal-text text-gray-800 overflow-y-auto min-h-0 rounded-b-md shadow-inner border-t border-gray-200">
+                        <div class="text-gray-400 italic">等待高危异常阈值触发...</div>
+                    </div>
+                </div>
+
+                <div class="panel flex-1 flex flex-col min-h-0 shadow-sm">
+                    <div class="panel-header bg-blue-50 border-b border-blue-100">
+                        <span class="text-blue-800 font-bold flex items-center"><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>DR-MAPPO 蜂群调度指令</span>
+                    </div>
+                    <div id="swarm-log" class="flex-1 bg-gray-50 p-3 text-[11px] terminal-text text-blue-800 overflow-y-auto min-h-0 rounded-b-md shadow-inner border-t border-gray-200">
+                        <div class="text-gray-400 italic">集群资产正常巡航中，通信链路畅通。</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-devices" class="flex-1 p-6 overflow-y-auto hidden-view bg-white">
+            <div class="max-w-6xl mx-auto">
+                <div class="mb-6 flex justify-between items-end border-b border-gray-200 pb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">集群资产与设备管理</h2>
+                        <p class="mt-1 text-sm text-gray-500">动态添加或移除系统挂载的水面艇、潜航器及各类传感器。</p>
+                    </div>
+                    <button onclick="openDeviceModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm transition-colors flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        添加新设备
+                    </button>
+                </div>
+                
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">资产编号 / 名称</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">设备类型</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">当前状态</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">剩余电量</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP 地址 / 协议</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="device-list-body" class="bg-white divide-y divide-gray-200">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-logs" class="flex-1 p-6 overflow-y-auto hidden-view bg-white">
+            <div class="max-w-7xl mx-auto">
+                <div class="mb-6 flex justify-between items-end border-b border-gray-200 pb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">预警与决策日志分析</h2>
+                        <p class="mt-1 text-sm text-gray-500">当 CADT 判定危险概率突破阈值时，系统会自动将大模型生成的救援策略和调度指令落盘记录。</p>
+                    </div>
+                    <button onclick="clearLogs()" class="bg-white border border-gray-300 hover:bg-gray-50 text-red-600 px-4 py-2 rounded-md text-sm font-medium shadow-sm transition-colors flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        清空所有日志
+                    </button>
+                </div>
+                
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">时间戳</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">置信度</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qwen 决策摘要 (JSON)</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">调度结果</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-list-body" class="bg-white divide-y divide-gray-200">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-settings" class="flex-1 p-6 overflow-y-auto hidden-view bg-white">
+            <div class="max-w-4xl mx-auto">
+                <div class="mb-8 border-b border-gray-200 pb-5">
+                    <h2 class="text-2xl font-bold text-gray-900">系统安全与配置</h2>
+                    <p class="mt-1 text-sm text-gray-500">管理视频流接入、预警阈值及系统参数。点击保存后将立即应用到全局大盘。</p>
+                </div>
+
+                <form class="space-y-8 divide-y divide-gray-200">
+                    <div class="pt-2">
+                        <div>
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">1. 感知层传感器配置</h3>
+                            <p class="mt-1 text-sm text-gray-500">接入无人艇(USV)的实时相机流与声呐API。</p>
+                        </div>
+                        <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                            <div class="sm:col-span-6">
+                                <label class="block text-sm font-medium text-gray-700">光学视频流 API 地址 (支持 MJPEG / HTTP Stream)</label>
+                                <div class="mt-1 flex rounded-md shadow-sm">
+                                    <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">URL</span>
+                                    <input type="text" id="config-video-url" placeholder="例如: http://192.168.1.100:8080/video_feed" class="flex-1 focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-none rounded-r-md sm:text-sm border-gray-300 px-3 py-2 border">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-8">
+                        <div>
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">2. 认知引擎与报警阈值</h3>
+                            <p class="mt-1 text-sm text-gray-500">设定大模型的调用条件和触发日志落盘的阈值。</p>
+                        </div>
+                        <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                            <div class="sm:col-span-4">
+                                <label class="block text-sm font-medium text-gray-700">LLM API Key (DashScope/HF)</label>
+                                <input type="password" id="config-llm-key" placeholder="sk-..." class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md px-3 py-2 border">
+                            </div>
+                            <div class="sm:col-span-6 mt-4">
+                                <label class="block text-sm font-medium text-gray-700">CADT 危险报警阈值 (Threshold): <span id="threshold-val" class="text-blue-600 font-bold">0.85</span></label>
+                                <input type="range" id="config-threshold" min="0.5" max="0.99" step="0.01" value="0.85" oninput="document.getElementById('threshold-val').innerText=this.value" class="w-full mt-4 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="pt-8 flex justify-end gap-3 pb-10 border-t border-gray-200 mt-8">
+                    <button type="button" onclick="loadConfig()" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">撤销更改</button>
+                    <button type="button" onclick="saveConfig()" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">应用并保存配置</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
     <script>
+        // ================= 数据持久化状态管理 (LocalStorage) =================
+        let devicesList = JSON.parse(localStorage.getItem('cadt_devices')) || [];
+        let alertLogs = JSON.parse(localStorage.getItem('cadt_logs')) || [];
+
+        // ===== 模块 1: 设备管理 CRUD =====
+        function openDeviceModal() {
+            document.getElementById('add-device-modal').classList.remove('hidden');
+        }
+
+        function closeDeviceModal() {
+            document.getElementById('add-device-modal').classList.add('hidden');
+            document.getElementById('add-device-form').reset();
+        }
+
+        function submitNewDevice() {
+            const name = document.getElementById('dev-name').value.trim();
+            const type = document.getElementById('dev-type').value;
+            const ip = document.getElementById('dev-ip').value.trim();
+
+            if (!name || !ip) { alert('资产编号和 IP 地址不能为空！'); return; }
+
+            devicesList.push({ name, type, ip, status: '在线 (Online)', battery: 100 });
+            localStorage.setItem('cadt_devices', JSON.stringify(devicesList));
+            
+            closeDeviceModal();
+            renderDevices();
+        }
+
+        function deleteDevice(index) {
+            if(confirm('确定要删除该设备吗？断开后大盘将无法接收该节点数据。')) {
+                devicesList.splice(index, 1);
+                localStorage.setItem('cadt_devices', JSON.stringify(devicesList));
+                renderDevices();
+            }
+        }
+
+        function renderDevices() {
+            const tbody = document.getElementById('device-list-body');
+            tbody.innerHTML = '';
+            
+            if (devicesList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-gray-500 text-sm">系统当前尚未挂载任何集群设备，请点击上方按钮添加。</td></tr>';
+                return;
+            }
+
+            devicesList.forEach((dev, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-bold text-gray-900">${dev.name}</div></td>
+                    <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">${dev.type}</div></td>
+                    <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">${dev.status}</span></td>
+                    <td class="px-6 py-4 whitespace-nowrap"><div class="w-full bg-gray-200 rounded-full h-2.5 w-24"><div class="bg-green-600 h-2.5 rounded-full" style="width: ${dev.battery}%"></div></div><span class="text-xs text-gray-500 mt-1">${dev.battery}%</span></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">${dev.ip}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><button onclick="deleteDevice(${index})" class="text-red-600 hover:text-red-900 font-bold">卸载删除</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ===== 模块 2: 实时落盘日志 =====
+        function renderLogs() {
+            const tbody = document.getElementById('log-list-body');
+            tbody.innerHTML = '';
+            
+            if (alertLogs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-12 text-center text-gray-500 text-sm">系统历史运行良好，暂未触发任何预警或大模型决策记录。</td></tr>';
+                return;
+            }
+
+            // 倒序渲染，最新的在最上面
+            [...alertLogs].reverse().forEach(log => {
+                const tr = document.createElement('tr');
+                const badgeColor = log.prob > 0.85 ? 'text-red-600' : 'text-yellow-600';
+                
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-mono">${log.time}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold ${badgeColor}">${(log.prob * 100).toFixed(1)}%</td>
+                    <td class="px-6 py-4 text-xs text-gray-900 font-mono"><pre class="bg-gray-50 p-2 rounded border border-gray-200 whitespace-pre-wrap">${log.strategy ? JSON.stringify(log.strategy, null, 2) : '无'}</pre></td>
+                    <td class="px-6 py-4 text-sm text-blue-600 font-medium">${log.swarm || '未下达调度指令'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function clearLogs() {
+            if(confirm('警告：此操作将永久清空所有历史预警及大模型决策日志，确定继续吗？')) {
+                alertLogs = [];
+                localStorage.setItem('cadt_logs', JSON.stringify(alertLogs));
+                renderLogs();
+            }
+        }
+
+        // ===== 模块 3: 系统配置管理 =====
+        function loadConfig() {
+            const savedUrl = localStorage.getItem('cadt_video_url') || '';
+            const savedKey = localStorage.getItem('cadt_llm_key') || '';
+            const savedThreshold = localStorage.getItem('cadt_threshold') || '0.85';
+
+            document.getElementById('config-video-url').value = savedUrl;
+            document.getElementById('config-llm-key').value = savedKey;
+            document.getElementById('config-threshold').value = savedThreshold;
+            document.getElementById('threshold-val').innerText = savedThreshold;
+
+            applyVideoFeed(savedUrl);
+        }
+
+        function saveConfig() {
+            const newUrl = document.getElementById('config-video-url').value.trim();
+            localStorage.setItem('cadt_video_url', newUrl);
+            localStorage.setItem('cadt_llm_key', document.getElementById('config-llm-key').value);
+            localStorage.setItem('cadt_threshold', document.getElementById('config-threshold').value);
+
+            applyVideoFeed(newUrl);
+            alert("✅ 系统配置已保存生效！");
+            switchTab('dashboard');
+        }
+
+        function applyVideoFeed(url) {
+            const feed = document.getElementById('video-feed');
+            const placeholder = document.getElementById('video-placeholder');
+            const statusBadge = document.getElementById('video-status-badge');
+
+            if (url) {
+                feed.src = url;
+                feed.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                statusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500 mr-1.5 recording-dot"></span>LIVE';
+                statusBadge.className = 'bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded text-[10px] flex items-center font-bold';
+            } else {
+                feed.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                document.getElementById('video-error-msg').innerText = "等待视频流信号接入";
+                statusBadge.innerHTML = 'STANDBY';
+                statusBadge.className = 'bg-gray-100 text-gray-500 px-2 py-0.5 rounded text-[10px] flex items-center';
+            }
+        }
+
+        function handleVideoError() {
+            const feed = document.getElementById('video-feed');
+            const placeholder = document.getElementById('video-placeholder');
+            const statusBadge = document.getElementById('video-status-badge');
+            feed.classList.add('hidden');
+            placeholder.classList.remove('hidden');
+            document.getElementById('video-error-msg').innerText = "视频流连接失败 (连接拒绝或超时)";
+            statusBadge.innerHTML = 'ERROR';
+            statusBadge.className = 'bg-red-100 text-red-600 px-2 py-0.5 rounded text-[10px] flex items-center font-bold border border-red-200';
+        }
+
+        // ================= 前端路由 (Tab 切换) =================
+        function switchTab(tabId) {
+            const views = ['dashboard', 'devices', 'logs', 'settings'];
+            views.forEach(v => {
+                document.getElementById('view-' + v).classList.add('hidden-view');
+                document.getElementById('nav-' + v).classList.remove('active');
+            });
+            
+            document.getElementById('view-' + tabId).classList.remove('hidden-view');
+            document.getElementById('nav-' + tabId).classList.add('active');
+            
+            const titles = { 'dashboard': '实时监控大盘', 'devices': '集群设备管理', 'logs': '预警决策日志分析', 'settings': '系统安全与配置' };
+            document.getElementById('breadcrumb-current').innerText = titles[tabId];
+
+            if (tabId === 'dashboard') {
+                setTimeout(() => { gaugeChart.resize(); physioChart.resize(); sonarChart.resize(); }, 50);
+            }
+        }
         const gaugeChart = echarts.init(document.getElementById('gauge-chart'));
         const physioChart = echarts.init(document.getElementById('physio-chart'));
         const sonarChart = echarts.init(document.getElementById('sonar-chart'));
         
-        const gaugeOption = {
-            series: [{
-                type: 'gauge', min: 0, max: 100, splitNumber: 5,
-                axisLine: { lineStyle: { width: 8, color: [[0.3, '#4caf50'], [0.7, '#ff9800'], [1, '#f44336']] } },
-                pointer: { width: 3, length: '60%', itemStyle: { color: '#fff' } },
-                axisTick: { show: false }, splitLine: { length: 12, lineStyle: { color: '#333' } },
-                axisLabel: { color: '#666', fontSize: 10, distance: 15 },
-                detail: { valueAnimation: true, formatter: '{value}%', color: '#fff', fontSize: 24, offsetCenter: [0, '70%'] },
-                data: [{ value: 0 }]
-            }]
-        };
+        const gaugeOption = { series: [{ type: 'gauge', min: 0, max: 100, splitNumber: 5, axisLine: { lineStyle: { width: 12, color: [[0.3, '#10b981'], [0.7, '#f59e0b'], [1, '#ef4444']] } }, pointer: { width: 4, length: '65%', itemStyle: { color: '#4b5563' } }, axisTick: { distance: -18, length: 6, lineStyle: { color: '#fff', width: 2 } }, splitLine: { distance: -22, length: 12, lineStyle: { color: '#fff', width: 2 } }, axisLabel: { color: '#6b7280', fontSize: 10, distance: 15 }, detail: { valueAnimation: true, formatter: '{value}%', color: '#111827', fontSize: 32, fontWeight: 'bold', offsetCenter: [0, '65%'] }, data: [{ value: 0 }] }] };
         gaugeChart.setOption(gaugeOption);
 
-        let physioData = Array.from({length: 100}, () => 50);
-        const physioOption = {
-            grid: { top: 20, bottom: 20, left: 40, right: 20 },
-            xAxis: { type: 'category', show: false },
-            yAxis: { type: 'value', min: 0, max: 100, splitLine: { lineStyle: { color: '#252525' } } },
-            series: [{ 
-                type: 'line', data: physioData, showSymbol: false, smooth: true,
-                lineStyle: { color: '#f44336', width: 2 },
-                areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{offset: 0, color: 'rgba(244, 67, 54, 0.2)'}, {offset: 1, color: 'transparent'}]) }
-            }]
-        };
+        let physioData = Array.from({length: 100}, () => 0);
+        const physioOption = { grid: { top: 15, bottom: 20, left: 35, right: 15 }, xAxis: { type: 'category', show: false }, yAxis: { type: 'value', min: 0, max: 100, splitLine: { lineStyle: { color: '#f3f4f6' } }, axisLabel: { fontSize: 10, color: '#6b7280'} }, series: [{ type: 'line', data: physioData, showSymbol: false, smooth: false, lineStyle: { color: '#ef4444', width: 2 }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{offset: 0, color: 'rgba(239, 68, 68, 0.2)'}, {offset: 1, color: 'transparent'}]) } }] };
         physioChart.setOption(physioOption);
 
-        let sonarData = Array.from({length: 30}, () => Math.random() * 40);
-        const sonarOption = {
-            grid: { top: 30, bottom: 20, left: 20, right: 20 },
-            xAxis: { type: 'category', show: false },
-            yAxis: { type: 'value', max: 100, show: false },
-            series: [{ type: 'bar', data: sonarData, itemStyle: { color: '#005fb8' } }]
-        };
+        let sonarData = Array.from({length: 30}, () => 0);
+        const sonarOption = { grid: { top: 20, bottom: 10, left: 10, right: 10 }, xAxis: { type: 'category', show: false }, yAxis: { type: 'value', max: 100, show: false }, series: [{ type: 'bar', data: sonarData, itemStyle: { color: '#6366f1', borderRadius: [2, 2, 0, 0] } }] };
         sonarChart.setOption(sonarOption);
 
-        // WebSocket 连接
         const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
         let basePath = window.location.pathname;
         if (!basePath.endsWith('/')) { basePath += '/'; }
@@ -181,69 +490,89 @@
 
         const ws = new WebSocket(wsUrl);
         
+        document.getElementById('data-mode').innerHTML = '<span class="w-2 h-2 rounded-full bg-gray-400 mr-1.5"></span>等待边缘节点心跳...';
+        document.getElementById('data-mode').className = "text-xs font-bold text-gray-500 flex items-center justify-end";
+
         ws.onmessage = function(event) {
             const data = JSON.parse(event.data);
             
-            // 数据源模式显示 (中文切换)
-            const modeEl = document.getElementById('data-mode');
-            const sourceText = data.mode.includes('SIMULATION') ? "🔴 模拟数据流" : "🟢 实机实时流";
-            modeEl.innerText = sourceText;
-            modeEl.className = data.mode.includes('SIMULATION') ? "text-sm font-bold text-orange-500" : "text-sm font-bold text-blue-400";
+            document.getElementById('data-mode').innerHTML = '<span class="w-2 h-2 rounded-full bg-green-500 mr-1.5"></span>硬件节点已在线通信';
+            document.getElementById('data-mode').className = "text-xs font-bold text-green-600 flex items-center justify-end";
 
-            document.getElementById('npu-latency').innerText = data.latency_ms.toFixed(1);
+            if(data.latency_ms) {
+                document.getElementById('npu-latency').innerText = data.latency_ms.toFixed(1);
+            }
             
             const probPercent = (data.distress_prob * 100).toFixed(1);
             const statusIndicator = document.getElementById('status-indicator');
 
             if (data.distress_prob > 0.85) {
-                statusIndicator.innerText = '紧急: 发现溺水异常';
-                statusIndicator.className = 'text-xl font-bold text-red-500 animate-pulse';
+                statusIndicator.innerText = '紧急报警 (CRITICAL)';
+                statusIndicator.className = 'text-base font-bold text-red-600 bg-red-50 px-3 py-0.5 rounded border border-red-200 animate-pulse';
             } else {
-                statusIndicator.innerText = '正常: 监测运行中';
-                statusIndicator.className = 'text-xl font-bold text-green-500';
+                statusIndicator.innerText = '安全监控中';
+                statusIndicator.className = 'text-base font-bold text-green-600 bg-green-50 px-3 py-0.5 rounded border border-green-200';
             }
-
             gaugeChart.setOption({ series: [{ data: [{ value: probPercent }] }] });
 
             physioData.shift();
-            physioData.push(50 + (data.physio_hrv * 30 * Math.sin(Date.now()/500)) + Math.random()*5);
+            const realPhysioValue = data.physio_hrv !== undefined ? data.physio_hrv * 100 : 0; 
+            physioData.push(realPhysioValue);
             physioChart.setOption({ series: [{ data: physioData }] });
 
-            sonarData = sonarData.map(v => Math.max(5, v + (Math.random() * 10 - 5)));
-            sonarChart.setOption({ series: [{ data: sonarData }] });
+            // 4. 声呐回波 (如果你的 edge_daemon 还没传真实声呐数组，这里将保持基线为 0)
+            if (data.sonar_array && Array.isArray(data.sonar_array)) {
+                sonarChart.setOption({ series: [{ data: data.sonar_array }] });
+            }
 
             const timeStr = new Date().toLocaleTimeString('zh-CN', {hour12:false});
-            
-            // 处理 LLM 日志 (底部追加)
+
             if (data.qwen_strategy) {
                 const llmLog = document.getElementById('llm-log');
                 if (llmLog.innerHTML.includes("等待")) llmLog.innerHTML = "";
                 const entry = document.createElement('div');
-                entry.className = "mb-2 pb-2 border-b border-[#252525]";
-                entry.innerHTML = `<span class="text-purple-500">[${timeStr}] 决策更新:</span><pre class="mt-1 text-gray-400">${JSON.stringify(data.qwen_strategy, null, 2)}</pre>`;
+                entry.className = "mb-3 pb-3 border-b border-gray-200 break-words";
+                entry.innerHTML = `<span class="text-purple-700 font-bold">[${timeStr}] 触发推理引擎:</span><pre class="mt-1 text-gray-700 whitespace-pre-wrap">${JSON.stringify(data.qwen_strategy, null, 2)}</pre>`;
                 llmLog.appendChild(entry);
                 llmLog.scrollTop = llmLog.scrollHeight;
-                if (llmLog.children.length > 5) llmLog.removeChild(llmLog.firstChild);
             }
 
-            // 处理蜂群日志
             if (data.swarm_status) {
                 const swarmLog = document.getElementById('swarm-log');
                 if (swarmLog.innerHTML.includes("待命")) swarmLog.innerHTML = "";
                 const entry = document.createElement('div');
-                entry.className = "mb-1";
-                entry.innerHTML = `<span class="text-gray-500">[${timeStr}]</span> ${data.swarm_status}`;
+                entry.className = "mb-1 text-blue-700";
+                entry.innerHTML = `<span class="text-gray-500 mr-2">[${timeStr}]</span>${data.swarm_status}`;
                 swarmLog.appendChild(entry);
                 swarmLog.scrollTop = swarmLog.scrollHeight;
-                if (swarmLog.children.length > 10) swarmLog.removeChild(swarmLog.firstChild);
+            }
+
+            if (data.qwen_strategy) {
+                const fullTimeStr = new Date().toLocaleString('zh-CN', {hour12:false});
+                if (alertLogs.length === 0 || alertLogs[alertLogs.length - 1].time !== fullTimeStr) {
+                    alertLogs.push({
+                        time: fullTimeStr,
+                        prob: data.distress_prob,
+                        strategy: data.qwen_strategy,
+                        swarm: data.swarm_status
+                    });
+                    if (alertLogs.length > 50) alertLogs.shift(); 
+                    localStorage.setItem('cadt_logs', JSON.stringify(alertLogs));
+                    if (!document.getElementById('view-logs').classList.contains('hidden-view')) {
+                        renderLogs();
+                    }
+                }
             }
         };
 
-        window.addEventListener('resize', () => { 
-            gaugeChart.resize(); 
-            physioChart.resize(); 
-            sonarChart.resize(); 
-        });
+        window.addEventListener('resize', () => { gaugeChart.resize(); physioChart.resize(); sonarChart.resize(); });
+        
+        window.onload = () => {
+            loadConfig();
+            // renderDevices 和 renderLogs 函数请确保保留在上方
+            renderDevices();
+            renderLogs();
+        };
     </script>
 </body>
 </html>

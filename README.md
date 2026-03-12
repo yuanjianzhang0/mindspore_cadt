@@ -32,6 +32,11 @@
 ## 📺 展示 / Product Showcase
 
 <p align="left">
+  <a> <img src="images/result2.gif" alt="" width="800" height="auto" style="border: none;">
+  </a>
+</p>
+
+<p align="left">
   <a> <img src="images/result.gif" alt="" width="800" height="auto" style="border: none;">
   </a>
 </p>
@@ -81,11 +86,13 @@ pip install -r requirements.txt
 
 ## 🚀 Quickstart / 快速开始
 
-我们提供了一套高度封装的脚本，涵盖了从数据生成、模型训练到边缘部署的全生命周期。
+我们提供了一套高度封装的脚本，涵盖了从模型训练到边缘部署的全生命周期。
 
 ## 💾 数据集准备
 
-我们截取了部分数据集，大小约11GB，可在链接中找到
+我们截取了部分数据集，大小约11GB，可在以下链接中找到
+[https://pan.baidu.com/s/1nw6XW1ekNartX_LQAaB2xQ?pwd=m4u3 ](https://pan.baidu.com/s/1nw6XW1ekNartX_LQAaB2xQ?pwd=m4u3 )
+提取码: m4u3 
 
 ## 🏋️ 模型训练
 
@@ -114,6 +121,7 @@ python deployment/export_mindir.py \
 
 在部署目标设备上，启动全局主控链路。该进程会自动执行硬件 API 监听、CPU 信号去噪预处理、NPU 毫秒级推理以及异常状态下的大模型调度。
 
+![alt text](images/f2.png)
 Bash
 
 ```
