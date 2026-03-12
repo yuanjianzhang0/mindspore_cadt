@@ -31,13 +31,18 @@
 
 ## 📺 展示 / Product Showcase
 
-<p align="left">
+<p align="center">
   <a> <img src="images/result2.gif" alt="" width="800" height="auto" style="border: none;">
   </a>
 </p>
 
-<p align="left">
+<p align="center">
   <a> <img src="images/result.gif" alt="" width="800" height="auto" style="border: none;">
+  </a>
+</p>
+
+<p align="center">
+  <a> <img src="images/ProductShowcase.png" alt="" width="500" height="auto" style="border: none;">
   </a>
 </p>
 
