@@ -1,1 +1,7 @@
-# Placeholder for requirements.txt
+mindspore>=2.0.0
+transformers>=4.37.0
+accelerate>=0.26.0
+numpy>=1.24.0
+requests>=2.31.0
+
+# mindspore-lite
