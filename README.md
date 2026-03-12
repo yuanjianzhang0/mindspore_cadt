@@ -13,19 +13,32 @@
     <a href="https://github.com/your-repo/Drowning-Detection-System/blob/main/LICENSE"><img alt="GitHub" src="https://img.shields.io/github/license/huggingface/transformers.svg?color=blue"></a>
 </p>
 
+
+
 <h4 align="center">
     <p>
         <b>简体中文</b> | <a href="i18n/README_en.md">English</a> 
     </p>
 </h4>
 
+<p align="center">
+  <a href="https://sklnst.bupt.edu.cn/index.htm" target="_blank"> <img src="images\logo\bupt.png" alt="网络与交换技术全国重点实验室" width="800" height="auto" style="border: none;">
+  </a>
+</p>
+
+
 <h3 align="center">
-    <p>基于 MindSpore 与昇腾算力的“感知-决策-执行”跨模态溺水救援系统</p>
+    <p>“零溺之盾”——跨介质多模态溺水感知与无人化应急救援系统</p>
 </h3>
 
-本项目构建了**“水下-水面-人体”**三位一体的立体化感知网络，结合小型无人水面艇（USV）、无人潜航器（UUV）以及医疗级生物传感贴片，实现了实时捕捉并跨介质对齐视觉、声呐与生理（ECG/HRV/SpO₂）等多模态数据。
+本项目构建了 **"水下-水面-人体"** 三位一体的立体化感知网络，结合小型无人水面艇（USV）、无人潜航器（UUV）以及医疗级生物传感贴片，实现了实时捕捉并跨介质对齐视觉、声呐与生理（ECG/HRV/SpO₂）等多模态数据。
 
 作为系统的核心，我们自主研发了 **Cross-modal Aquatic Distress Transformer (CADT)** 模型，实现了视觉-声呐-生理三模态信息的非对称深度交互与互监督，确保对隐蔽性被动溺水或突发心脏骤停的**零漏报**。在认知与执行层，系统基于 **Qwen (通义千问)** 边缘量化大模型进行语义推理，驱动 **DR-MAPPO** 多智能体调度引擎，在“黄金4分钟”内自主完成无人艇协同救援闭环。
+
+<p align="center">
+  <img src="images\CADT.png" alt="CADT" width="600">
+</p>
+
 
 ## Installation / 环境安装
 
@@ -130,6 +143,7 @@ Drowning-Detection-System/
 └── edge_daemon.py                # 🚀 全局守护进程 (端侧总控入口)
 
 ```
+
 
 ## Citation / 引用
 
