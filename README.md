@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="img/figure1.png" alt="CADT" width="600">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./images/figure1_dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="./images/figure1_light.png">
+    <img alt="CADT" src="./images/figure1_light.png" width="600" style="max-width: 100%;">
+  </picture>
 </p>
 
 <p align="center">
