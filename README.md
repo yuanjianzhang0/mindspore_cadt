@@ -1,7 +1,5 @@
 <p align="center">
-  <br/>
-  <h1>🌊 Drowning-Detection-System (CADT)</h1>
-  <br/>
+  <img src="img/figure1.png" alt="CADT" width="600">
 </p>
 
 <p align="center">
