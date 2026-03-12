@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CADT 跨模态溺水救援指挥系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <style>
+        body { 
+            background-color: #121212; 
+            color: #ffffff; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0; 
+            overflow: hidden; 
+        }
+        
+        /* 工业级面板 */
+        .panel { 
+            background: #1e1e1e; 
+            border: 1px solid #333; 
+            border-radius: 4px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        /* 标题栏设计 */
+        .panel-header {
+            background: #252525;
+            padding: 8px 12px;
+            border-bottom: 1px solid #333;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #999;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 状态灯 */
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .bg-safe { background-color: #4caf50; box-shadow: 0 0 8px #4caf50; }
+        .bg-danger { background-color: #f44336; box-shadow: 0 0 8px #f44336; }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #666; }
+
+        .terminal-text { font-family: "Consolas", "Monaco", monospace; line-height: 1.4; }
+    </style>
+</head>
+<body class="h-screen flex flex-col p-3 overflow-hidden">
+
+    <header class="flex justify-between items-center mb-3 bg-[#1e1e1e] border border-[#333] p-4 rounded flex-shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="bg-[#005fb8] p-2 rounded">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">CADT 跨模态溺水救援指挥中心</h1>
+                <p class="text-xs text-gray-500 uppercase">工业级边缘节点监控 · 昇腾 310B NPU 加速</p>
+            </div>
+        </div>
+        
+        <div class="flex gap-6 items-center">
+            <div class="text-right border-r border-gray-700 pr-6">
+                <div class="text-[10px] text-gray-500 mb-1">数据源状态</div>
+                <div id="data-mode" class="text-sm font-bold text-blue-400">正在建立连接...</div>
+            </div>
+            <div class="text-right">
+                <div class="text-[10px] text-gray-500 mb-1">系统全局判定</div>
+                <div id="status-indicator" class="text-xl font-bold text-green-500">正在监测中</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="grid grid-cols-12 gap-3 flex-1 min-h-0">
+        
+        <div class="col-span-8 flex flex-col gap-3 h-full min-h-0">
+            <div class="flex gap-3 h-3/5 min-h-0">
+                <div class="panel flex-1 flex flex-col min-h-0">
+                    <div class="panel-header">
+                        <span>光学视觉传感器 [USV-CAM-1]</span>
+                        <span class="text-[10px] text-blue-500">LIVE / 1080P</span>
+                    </div>
+                    <div class="flex-1 bg-black flex items-center justify-center relative overflow-hidden">
+                        <div class="w-full h-full opacity-10" style="background-image: radial-gradient(#333 1px, transparent 1px); background-size: 15px 15px;"></div>
+                        <div class="absolute text-gray-700 font-bold">无视频流信号接入</div>
+                    </div>
+                </div>
+                <div class="panel flex-1 flex flex-col min-h-0">
+                    <div class="panel-header">
+                        <span>声呐探测矩阵 [UUV-SONAR]</span>
+                        <span class="text-[10px] text-purple-500">ACOUSTIC</span>
+                    </div>
+                    <div class="flex-1 min-h-0" id="sonar-chart"></div>
+                </div>
+            </div>
+            
+            <div class="panel flex-1 flex flex-col min-h-0">
+                <div class="panel-header">
+                    <span>人体生理特征监测 (心率变异性 / 血氧饱和度)</span>
+                    <span class="text-[10px] text-red-500">MEDICAL GRADE</span>
+                </div>
+                <div class="flex-1 w-full min-h-0" id="physio-chart"></div>
+            </div>
+        </div>
+
+        <div class="col-span-4 flex flex-col gap-3 h-full min-h-0">
+            
+            <div class="panel flex-1 flex flex-col min-h-0">
+                <div class="panel-header">险情发生概率判决 (CADT)</div>
+                <div class="flex-1 min-h-0" id="gauge-chart"></div>
+                <div class="p-2 text-center border-t border-[#333] text-[10px] text-gray-500">
+                    NPU 处理耗时: <span id="npu-latency" class="text-white">0.0</span> ms
+                </div>
+            </div>
+
+            <div class="panel flex-1 flex flex-col border-l-2 border-purple-600 min-h-0">
+                <div class="panel-header">Qwen 认知引擎决策输出</div>
+                <div id="llm-log" class="flex-1 bg-[#0f0f0f] p-3 text-[11px] terminal-text text-gray-300 overflow-y-auto min-h-0">
+                    <div class="text-gray-600">等待高危异常触发...</div>
+                </div>
+            </div>
+
+            <div class="panel flex-1 flex flex-col border-l-2 border-blue-600 min-h-0">
+                <div class="panel-header">多智能体蜂群调度指令</div>
+                <div id="swarm-log" class="flex-1 bg-[#0f0f0f] p-3 text-[11px] terminal-text text-blue-400 overflow-y-auto min-h-0">
+                    <div class="text-gray-600">集群资产待命...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const gaugeChart = echarts.init(document.getElementById('gauge-chart'));
+        const physioChart = echarts.init(document.getElementById('physio-chart'));
+        const sonarChart = echarts.init(document.getElementById('sonar-chart'));
+        
+        const gaugeOption = {
+            series: [{
+                type: 'gauge', min: 0, max: 100, splitNumber: 5,
+                axisLine: { lineStyle: { width: 8, color: [[0.3, '#4caf50'], [0.7, '#ff9800'], [1, '#f44336']] } },
+                pointer: { width: 3, length: '60%', itemStyle: { color: '#fff' } },
+                axisTick: { show: false }, splitLine: { length: 12, lineStyle: { color: '#333' } },
+                axisLabel: { color: '#666', fontSize: 10, distance: 15 },
+                detail: { valueAnimation: true, formatter: '{value}%', color: '#fff', fontSize: 24, offsetCenter: [0, '70%'] },
+                data: [{ value: 0 }]
+            }]
+        };
+        gaugeChart.setOption(gaugeOption);
+
+        let physioData = Array.from({length: 100}, () => 50);
+        const physioOption = {
+            grid: { top: 20, bottom: 20, left: 40, right: 20 },
+            xAxis: { type: 'category', show: false },
+            yAxis: { type: 'value', min: 0, max: 100, splitLine: { lineStyle: { color: '#252525' } } },
+            series: [{ 
+                type: 'line', data: physioData, showSymbol: false, smooth: true,
+                lineStyle: { color: '#f44336', width: 2 },
+                areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{offset: 0, color: 'rgba(244, 67, 54, 0.2)'}, {offset: 1, color: 'transparent'}]) }
+            }]
+        };
+        physioChart.setOption(physioOption);
+
+        let sonarData = Array.from({length: 30}, () => Math.random() * 40);
+        const sonarOption = {
+            grid: { top: 30, bottom: 20, left: 20, right: 20 },
+            xAxis: { type: 'category', show: false },
+            yAxis: { type: 'value', max: 100, show: false },
+            series: [{ type: 'bar', data: sonarData, itemStyle: { color: '#005fb8' } }]
+        };
+        sonarChart.setOption(sonarOption);
+
+        // WebSocket 连接
+        const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        let basePath = window.location.pathname;
+        if (!basePath.endsWith('/')) { basePath += '/'; }
+        const wsUrl = protocol + window.location.host + basePath + 'ws/telemetry';
+
+        const ws = new WebSocket(wsUrl);
+        
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            
+            // 数据源模式显示 (中文切换)
+            const modeEl = document.getElementById('data-mode');
+            const sourceText = data.mode.includes('SIMULATION') ? "🔴 模拟数据流" : "🟢 实机实时流";
+            modeEl.innerText = sourceText;
+            modeEl.className = data.mode.includes('SIMULATION') ? "text-sm font-bold text-orange-500" : "text-sm font-bold text-blue-400";
+
+            document.getElementById('npu-latency').innerText = data.latency_ms.toFixed(1);
+            
+            const probPercent = (data.distress_prob * 100).toFixed(1);
+            const statusIndicator = document.getElementById('status-indicator');
+
+            if (data.distress_prob > 0.85) {
+                statusIndicator.innerText = '紧急: 发现溺水异常';
+                statusIndicator.className = 'text-xl font-bold text-red-500 animate-pulse';
+            } else {
+                statusIndicator.innerText = '正常: 监测运行中';
+                statusIndicator.className = 'text-xl font-bold text-green-500';
+            }
+
+            gaugeChart.setOption({ series: [{ data: [{ value: probPercent }] }] });
+
+            physioData.shift();
+            physioData.push(50 + (data.physio_hrv * 30 * Math.sin(Date.now()/500)) + Math.random()*5);
+            physioChart.setOption({ series: [{ data: physioData }] });
+
+            sonarData = sonarData.map(v => Math.max(5, v + (Math.random() * 10 - 5)));
+            sonarChart.setOption({ series: [{ data: sonarData }] });
+
+            const timeStr = new Date().toLocaleTimeString('zh-CN', {hour12:false});
+            
+            // 处理 LLM 日志 (底部追加)
+            if (data.qwen_strategy) {
+                const llmLog = document.getElementById('llm-log');
+                if (llmLog.innerHTML.includes("等待")) llmLog.innerHTML = "";
+                const entry = document.createElement('div');
+                entry.className = "mb-2 pb-2 border-b border-[#252525]";
+                entry.innerHTML = `<span class="text-purple-500">[${timeStr}] 决策更新:</span><pre class="mt-1 text-gray-400">${JSON.stringify(data.qwen_strategy, null, 2)}</pre>`;
+                llmLog.appendChild(entry);
+                llmLog.scrollTop = llmLog.scrollHeight;
+                if (llmLog.children.length > 5) llmLog.removeChild(llmLog.firstChild);
+            }
+
+            // 处理蜂群日志
+            if (data.swarm_status) {
+                const swarmLog = document.getElementById('swarm-log');
+                if (swarmLog.innerHTML.includes("待命")) swarmLog.innerHTML = "";
+                const entry = document.createElement('div');
+                entry.className = "mb-1";
+                entry.innerHTML = `<span class="text-gray-500">[${timeStr}]</span> ${data.swarm_status}`;
+                swarmLog.appendChild(entry);
+                swarmLog.scrollTop = swarmLog.scrollHeight;
+                if (swarmLog.children.length > 10) swarmLog.removeChild(swarmLog.firstChild);
+            }
+        };
+
+        window.addEventListener('resize', () => { 
+            gaugeChart.resize(); 
+            physioChart.resize(); 
+            sonarChart.resize(); 
+        });
+    </script>
+</body>
+</html>

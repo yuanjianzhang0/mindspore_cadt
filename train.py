@@ -16,7 +16,7 @@ def parse_args():
     parser.add_argument('--epochs', type=int, default=50, help='Total training epochs.')
     parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training.')
     parser.add_argument('--lr', type=float, default=1e-4, help='Initial learning rate.')
-    parser.add_argument('--device', type=str, default='CPU', choices=['CPU', 'GPU', 'Ascend'], 
+    parser.add_argument('--device', type=str, default='Ascend', choices=['CPU', 'GPU', 'Ascend'], 
                         help='Target computation device.')
     return parser.parse_args()
 

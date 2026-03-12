@@ -119,24 +119,56 @@ class DrowningDetectionDaemon:
                 status = "NORMAL" if distress_prob < self.threshold else "CRITICAL"
                 print(f"[Cycle {cycle_count:04d}] Inference: {latency_ms:.1f}ms | Distress Prob: {distress_prob:.3f} | Status: {status}")
                 
-                # Step 4: Cognitive Decision Trigger (Only activated on high alert)
+                # ==========================================
+                # Step 4: Cognitive Decision Trigger & UI Telemetry
+                # ==========================================
+                qwen_strategy_payload = None
+                swarm_status_payload = None
+
                 if distress_prob >= self.threshold:
                     print(f"\n[ALERT] Threshold exceeded ({distress_prob:.2f} >= {self.threshold}). Awakening Cognitive Engine...")
                     
-                    # Extract raw physiological vector to pass to LLM (using the first frame's HRV proxy)
+                    # Extract raw physiological vector to pass to LLM
                     physio_vector_snapshot = clean_physio[0, 0, :2] 
                     
                     # LLM Semantic Reasoning
                     strategy = self.llm_adapter.generate_strategy(distress_prob, physio_vector_snapshot)
+                    qwen_strategy_payload = strategy  # 捕获策略用于前端展示
                     
                     # Swarm Execution
                     print("[ACTION] Dispatching Swarm Directives:")
                     actions = self.swarm_scheduler.dispatch_agents(strategy, target_coordinates=(34.21, 118.45))
+                    
+                    if actions:
+                        swarm_status_payload = actions[0] # 捕获第一条指令用于前端弹窗
+                        
                     for action in actions:
                         print(f"   -> {action}")
                     print("-" * 60)
                 
-                # Enforce loop frequency (e.g., 10 Hz -> 100ms per cycle)
+                # ------------------------------------------
+                # 【新增核心功能】前端大屏联动推送 (Telemetry Push)
+                # ------------------------------------------
+                # 注意：必须使用 float() 强制转换 Numpy 数据类型，否则会引发 JSON 序列化崩溃
+                current_hrv = float(clean_physio[0, 0, 0])
+                
+                telemetry_data = {
+                    "distress_prob": float(distress_prob),
+                    "physio_hrv": current_hrv,
+                    "latency_ms": float(latency_ms),
+                    "qwen_strategy": qwen_strategy_payload,
+                    "swarm_status": swarm_status_payload
+                }
+                
+                try:
+                    import requests 
+                    requests.post("http://127.0.0.1:8000/api/push_telemetry", json=telemetry_data, timeout=0.5)
+                except Exception as e:
+                    print(f"[WARNING] 无法将数据推送至大屏: {e}")
+
+                # ==========================================
+                # Step 5: Enforce loop frequency
+                # ==========================================
                 elapsed = time.time() - loop_start
                 sleep_time = max(0.0, (1.0 / self.target_freq) - elapsed)
                 time.sleep(sleep_time)
