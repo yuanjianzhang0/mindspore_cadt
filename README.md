@@ -6,6 +6,10 @@
   </picture>
 </p>
 
+<h2 align="center">
+    <p>“零溺之盾”——跨介质多模态溺水感知与无人化应急救援系统</p>
+</h2>
+
 <p align="center">
     <a href="https://www.mindspore.cn/"><img alt="MindSpore" src="https://img.shields.io/badge/MindSpore-2.0+-blue?logo=mindspore"></a>
     <a href="https://e.huawei.com/en/products/computing/ascend"><img alt="Ascend 310B" src="https://img.shields.io/badge/Hardware-Ascend_910B/310B-red"></a>
@@ -14,27 +18,25 @@
 </p>
 
 
-
-<h4 align="center">
-    <p>
-        <b>简体中文</b> | <a href="i18n/README_en.md">English</a> 
-    </p>
-</h4>
-
 <p align="center">
   <a href="https://sklnst.bupt.edu.cn/index.htm" target="_blank"> <img src="images\logo\bupt.png" alt="网络与交换技术全国重点实验室" width="800" height="auto" style="border: none;">
   </a>
 </p>
 
+<!-- <h4 align="center">
+    <p>
+        <b>简体中文</b> | <a href="i18n/README_en.md">English</a> 
+    </p>
+</h4> -->
 
-<h2 align="center">
-    <p>“零溺之盾”——跨介质多模态溺水感知与无人化应急救援系统</p>
-</h2>
+## 📺 展示 / Product Showcase
 
 <p align="left">
   <a> <img src="images/result.gif" alt="" width="800" height="auto" style="border: none;">
   </a>
 </p>
+
+## 📖 简介 / Introduction
 
 本项目构建了 **"水下-水面-人体"** 三位一体的立体化感知网络，结合小型无人水面艇（USV）、无人潜航器（UUV）以及医疗级生物传感贴片，实现了实时捕捉并跨介质对齐视觉、声呐与生理（ECG/HRV/SpO₂）等多模态数据。
 
