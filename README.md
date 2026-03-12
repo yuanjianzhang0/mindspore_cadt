@@ -70,13 +70,10 @@ pip install -r requirements.txt
 
 我们提供了一套高度封装的脚本，涵盖了从数据生成、模型训练到边缘部署的全生命周期。展开下方菜单查看具体用法。
 
-无需下载庞大的外部数据集，本系统内置了支持多进程加速的高维多模态数据生成器。
-
+我们截取了部分数据集，大小约11GB，可在链接中找到[百度网盘](https://www.mindspore.cn/install)
 ```bash
-# 步骤 1: 生成多模态时间序列数据 (保存至 data/train_dataset.csv)
-python scripts/generate_csv.py
 
-# 步骤 2: 一键启动 CADT 模型训练 (支持数据下沉模式)
+一键启动 CADT 模型训练 (支持数据下沉模式)
 bash scripts/train.sh
 
 ```
@@ -143,6 +140,24 @@ Drowning-Detection-System/
 └── edge_daemon.py                # 🚀 全局守护进程 (端侧总控入口)
 
 ```
+
+## 资助
+
+本项目的研究与开发工作得到了以下机构与科研基金的鼎力支持与资助：
+
+- 北邮-华为横向科研项目: "面向昇腾NPU的高性能动态Shape算子设计与实现"
+- 北京邮电大学研究生创新创业项目（国家级）
+- 华为ICT大赛云计算资源
+- 北京邮电大学 华为学院
+
+## 其他
+
+项目基于华为云搭建
+
+<p align="left">
+  <a href="https://console.huaweicloud.com/" target="_blank"> <img src="images\logo\huaweicloud.png" alt="华为云" width="200" height="auto" style="border: none;">
+  </a>
+</p>
 
 
 ## Citation / 引用
