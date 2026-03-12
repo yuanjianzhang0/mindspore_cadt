@@ -27,9 +27,9 @@
 </p>
 
 
-<h3 align="center">
+<h2 align="center">
     <p>“零溺之盾”——跨介质多模态溺水感知与无人化应急救援系统</p>
-</h3>
+</h2>
 
 <p align="left">
   <a> <img src="images/result.gif" alt="" width="800" height="auto" style="border: none;">
