@@ -7,11 +7,14 @@
 </p>
 
 <h2 align="center">
-    <p><a href="https://yuanjianzhang0.github.io/AstraNova/">“零溺之盾”——跨介质多模态溺水感知与无人化应急救援系统</a></p>
+    <p><a href="https://yuanjianzhang0.github.io/AstraNova/", target="_blank">“零溺之盾”——跨介质多模态溺水感知与无人化应急救援系统</a></p>
 </h2>
+
 <h3 align="center">
     <p><a href="https://yuanjianzhang0.github.io/AstraNova/", target="_blank">“争分夺秒,敬畏每一次生命”——(点击进入项目官网)</a></p>
 </h3>
+
+------
 
 <p align="center">
     <a href="https://www.mindspore.cn/"><img alt="MindSpore" src="https://img.shields.io/badge/MindSpore-2.0+-blue?logo=mindspore"></a>
