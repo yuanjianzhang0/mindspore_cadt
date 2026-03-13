@@ -93,7 +93,8 @@ pip install -r requirements.txt
 
 我们提供了一个预训练模型，运行以下代码可以直接看到结果
 
-python
+Bash
+
 ```
 python edge_daemon.py
 ```
