@@ -7,7 +7,10 @@
 </p>
 
 <h2 align="center">
-    <p><a href="https://yuanjianzhang0.github.io/AstraNova/">[项目官网]“零溺之盾”——跨介质多模态溺水感知与无人化应急救援系统</a></p>
+    <p><a href="https://yuanjianzhang0.github.io/AstraNova/">“零溺之盾”——跨介质多模态溺水感知与无人化应急救援系统</a></p>
+</h2>
+<h2 align="center">
+    <p><a href="https://yuanjianzhang0.github.io/AstraNova/">[项目官网]</a></p>
 </h2>
 
 <p align="center">
