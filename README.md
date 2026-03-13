@@ -91,6 +91,19 @@ pip install -r requirements.txt
 
 ## 🚀 Quickstart / 快速开始
 
+我们提供了一个预训练模型，运行以下代码可以直接看到结果
+
+python
+```
+python edge_daemon.py
+```
+<p align="center">
+  <a> <img src="images/result.gif" alt="" width="800" height="auto" style="border: none;">
+  </a>
+</p>
+
+
+## 🏋️‍♀️ 训练模式
 我们提供了一套高度封装的脚本，涵盖了从模型训练到边缘部署的全生命周期。
 
 ## 💾 数据集准备
