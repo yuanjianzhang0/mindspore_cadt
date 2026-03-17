@@ -68,6 +68,7 @@ class SensorAPIClient:
             # Fallback Mechanism: Generate synthetic data if the hardware API is offline
             # This ensures the pipeline doesn't crash during testing or transient network drops.
             # print(f"[Warning] API connection failed for {modality} ({e}). Using synthetic fallback.")
+            # 没有真实硬件，返回模拟数据
             return np.random.randn(*expected_shape).astype(np.float32)
 
 
